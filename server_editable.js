@@ -110,9 +110,13 @@ app.use('/db-find-document', function(req, res) {
 
 // For inserting the url in the collection
 app.use('/new/:url_value*?', function(req, res) {
-  console.log('current value: ' +req.params.url_value+req.params[0]);    // This retrieves both 'https:' and '<url_val>'
-  console.log(Math.floor(1000 + Math.random() * 9000));                  // This retrieves a 4-digit random value
-  res.send('url_value is a url string');
+  var fullUrl = req.params.url_value+req.params[0];
+  var url_rand_val = Math.floor(1000 + Math.random() * 9000);
+  var short_url = "https://md-url-shortener-microservice.glitch.me/"+url_rand_val;
+  console.log('url current value: ' +fullUrl);                          // This retrieves both 'https:' and '<url_val>'
+  console.log('url random int value:' +url_rand_val);                    // This retrieves a 4-digit random value
+  
+  // res.send('url_value is a url string');
   
   // Start of mongodb call
   MongoClient.connect(uri, function(err, db) {
@@ -121,21 +125,59 @@ app.use('/new/:url_value*?', function(req, res) {
       console.log('Connection established.'); 
       var docs = db.collection('url_collection');
   // Find method - check if url and url number values are unique
-      docs.distinct({
-        "url": {},
-      }).toArray(function(err, documents) {
-              if(err) throw err;
+      docs.findOneAndUpdate(
+        {"url": fullUrl},
+        { $set: {
+            url: fullUrl,
+            short_url: short_url,
+            url_num: url_rand_val,
+          }
+        },
+        { upsert:true } 
+      , function(errInsert, data) {
+              if(errInsert) throw errInsert;
               else {
-                console.log('data found');
-                console.log(documents);
+                console.log('data inserted into the database');
+                if (data.value !== null) {
+                  console.log(data);
+                  res.send({"original_url":data.value.url,"short_url":data.value.short_url});
+                } else {
+                  res.send({"original_url":fullUrl,"short_url":"https://md-url-shortener-microservice.glitch.me/"+url_rand_val});
+                }
               }
       });
-  // Insertion method next up to be placed below
     }
     db.close();
   });
-  // End of mongodb call
   
+app.use('/:url_num', function(req, res) {
+  MongoClient.connect(uri, function(err, db) {
+    if (err) { console.log('Unable to connect to server.'); }
+    else { 
+      console.log('Connection established.'); 
+      var docs = db.collection('url_collection');
+      
+      if(isNaN(req.params.url_num)) {
+        res.send({"error":"The url is not on the database."})
+      }
+      else {
+      docs.find({
+                url_num: req.params.url_num,
+        }).toArray(function(err, documents) {
+                if(err) throw err;
+                else {
+                  console.log('data found');
+                  console.log(documents);
+                }
+        });
+      }
+    }
+    db.close();
+  }); 
+});
+// End of mongodb call
+  
+  //res.send('URL parameter is processed');
 });
   
 app.route('/')
