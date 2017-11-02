@@ -65,6 +65,78 @@ app.use('/db-connect', function(req, res) {
     else { console.log('Connection established.'); }
   });
 });
+
+app.use('/db-insert-document', function(req, res) {
+  MongoClient.connect(uri, function(err, db) {
+    if (err) { console.log('Unable to connect to server.'); }
+    else { 
+      console.log('Connection established.'); 
+      var docs = db.collection('url_collection');
+      
+      docs.insert({
+                url: "https://www.microsoft.com",
+        }, function(err, data) {
+                if(err) throw err;
+                else {
+                  console.log('data inserted');
+                  console.log(data);
+                }
+        });
+    }
+    db.close();
+  });  
+});
+
+app.use('/db-find-document', function(req, res) {
+  MongoClient.connect(uri, function(err, db) {
+    if (err) { console.log('Unable to connect to server.'); }
+    else { 
+      console.log('Connection established.'); 
+      var docs = db.collection('url_collection');
+      
+      docs.find({
+                url: "https://www.microsoft.com",
+        }).toArray(function(err, documents) {
+                if(err) throw err;
+                else {
+                  console.log('data found');
+                  console.log(documents);
+                }
+        });
+    }
+    db.close();
+  });  
+});
+
+// For inserting the url in the collection
+app.use('/new/:url_value*?', function(req, res) {
+  console.log('current value: ' +req.params.url_value+req.params[0]);    // This retrieves both 'https:' and '<url_val>'
+  console.log(Math.floor(1000 + Math.random() * 9000));                  // This retrieves a 4-digit random value
+  res.send('url_value is a url string');
+  
+  // Start of mongodb call
+  MongoClient.connect(uri, function(err, db) {
+    if (err) { console.log('Unable to connect to server.'); }
+    else {
+      console.log('Connection established.'); 
+      var docs = db.collection('url_collection');
+  // Find method - check if url and url number values are unique
+      docs.distinct({
+        "url": {},
+      }).toArray(function(err, documents) {
+              if(err) throw err;
+              else {
+                console.log('data found');
+                console.log(documents);
+              }
+      });
+  // Insertion method next up to be placed below
+    }
+    db.close();
+  });
+  // End of mongodb call
+  
+});
   
 app.route('/')
     .get(function(req, res) {
