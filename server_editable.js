@@ -149,35 +149,32 @@ app.use('/new/:url_value*?', function(req, res) {
     }
     db.close();
   });
+// End of mongodb call
   
+});
+
 app.use('/:url_num', function(req, res) {
   MongoClient.connect(uri, function(err, db) {
     if (err) { console.log('Unable to connect to server.'); }
     else { 
       console.log('Connection established.'); 
       var docs = db.collection('url_collection');
-      
-      if(isNaN(req.params.url_num)) {
-        res.send({"error":"The url is not on the database."})
-      }
-      else {
+      var url_num = parseInt(req.params.url_num);
       docs.find({
-                url_num: req.params.url_num,
+                url_num: url_num,
         }).toArray(function(err, documents) {
                 if(err) throw err;
                 else {
-                  console.log('data found');
-                  console.log(documents);
+                  if(documents.length === 0) {
+                    res.send({"error":"This url is not on the database."});
+                  } else {
+                    res.redirect(documents[0].url);
+                  }
                 }
         });
-      }
     }
     db.close();
   }); 
-});
-// End of mongodb call
-  
-  //res.send('URL parameter is processed');
 });
   
 app.route('/')
