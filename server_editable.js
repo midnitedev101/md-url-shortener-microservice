@@ -8,6 +8,11 @@
 var fs = require('fs');
 var express = require('express');
 var app = express();
+var mongodb = require('mongodb');
+
+var uri = 'mongodb://'+process.env.DB_USER+':'+process.env.DB_PASS+'@'+process.env.DB_HOST+':'+process.env.DB_PORT+'/'+process.env.DB_NAME;
+
+var MongoClient = mongodb.MongoClient;
 
 if (!process.env.DISABLE_XORIGIN) {
   app.use(function(req, res, next) {
@@ -33,7 +38,7 @@ app.route('/_api/package.json')
     });
   });
 
-app.use('/testing', function (req, res) {
+app.use('/latest-versions', function (req, res) {
   const latestVersion = require('latest-version');
  
   latestVersion('mongod').then(version => {
@@ -45,6 +50,20 @@ app.use('/testing', function (req, res) {
       console.log(version);
       //=> '1.0.1' 
   });  
+  res.send('versions shown');
+});
+
+app.use('/db-connect', function(req, res) {
+  console.log(process.env.DB_HOST);
+  console.log(process.env.DB_PORT);
+  console.log(process.env.DB_NAME);
+  console.log(uri);
+  console.log(process.env.DB_USER);
+  console.log(process.env.DB_PASS);
+  MongoClient.connect(uri, function(err, db) {
+    if (err) { console.log('Unable to connect to server.'); }
+    else { console.log('Connection established.'); }
+  });
 });
   
 app.route('/')
