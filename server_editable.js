@@ -32,6 +32,20 @@ app.route('/_api/package.json')
       res.type('txt').send(data.toString());
     });
   });
+
+app.use('/testing', function (req, res) {
+  const latestVersion = require('latest-version');
+ 
+  latestVersion('mongod').then(version => {
+      console.log(version);
+      //=> '0.18.0' 
+  });
+
+  latestVersion('mongodb').then(version => {
+      console.log(version);
+      //=> '1.0.1' 
+  });  
+});
   
 app.route('/')
     .get(function(req, res) {
